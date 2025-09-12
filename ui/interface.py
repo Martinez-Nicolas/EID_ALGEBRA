@@ -5,8 +5,8 @@ Integrante responsable: Diego Leiva
 
 import customtkinter as ctk
 from tkinter import messagebox
-from core.math_utils import analizar_funcion
-from core.plot_utils import graficar_funcion
+from core.math_utils import analizar_expresion
+from core.plot_utils import plot_function
 
 def iniciar_interfaz():
     """
@@ -44,15 +44,22 @@ def iniciar_interfaz():
         expr = entry_funcion.get()
         x_val_str = entry_x.get()
 
-        resultado = analizar_funcion(expr)
-
-        if "error" in resultado:
-            messagebox.showerror("Error", resultado["error"])
+        # Usar analizar_expresion en vez de analizar_funcion
+        try:
+            funcion, x = analizar_expresion(expr)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
             return
 
-        texto = f"Dominio: {resultado['dominio']}\n"
-        texto += f"Intersecciones con X: {resultado['intersecciones_x']}\n"
-        texto += f"Intersección con Y: {resultado['interseccion_y']}\n"
+        # Aquí deberías llamar a las funciones para obtener dominio, intersecciones, etc.
+        from core.math_utils import analizar_dominio_recorrido, encontrar_intersecciones
+
+        dominio, recorrido = analizar_dominio_recorrido(funcion, x)
+        intersecciones_x, interseccion_y = encontrar_intersecciones(funcion, x)
+
+        texto = f"Dominio: {dominio}\n"
+        texto += f"Intersecciones con X: {intersecciones_x}\n"
+        texto += f"Intersección con Y: {interseccion_y}\n"
         lbl_resultados.configure(text=texto)
 
         x_val = None
@@ -63,7 +70,13 @@ def iniciar_interfaz():
                 messagebox.showerror("Error", "x debe ser un número válido")
                 return
 
-        graficar_funcion(resultado["expr"], x_val, resultado)
+        # Usar plot_function en vez de graficar_funcion
+        try:
+            import matplotlib.pyplot as plt
+            fig, ax = plot_function(funcion, eval_point=x_val)
+            plt.show()
+        except Exception as e:
+            messagebox.showerror("Error al graficar", str(e))
 
     # Botón analizar
     btn_analizar = ctk.CTkButton(app, text="Analizar función", command=ejecutar)
