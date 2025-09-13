@@ -5,7 +5,12 @@ Integrante responsable: Diego Leiva
 
 import customtkinter as ctk
 from tkinter import messagebox
-from core.math_utils import analizar_expresion
+from core.math_utils import (
+    analizar_expresion,
+    analizar_dominio_recorrido,
+    encontrar_intersecciones,
+    evaluar_punto
+)
 from core.plot_utils import plot_function
 
 def iniciar_interfaz():
@@ -40,7 +45,7 @@ def iniciar_interfaz():
     hint = ctk.CTkLabel(
         container,
         text="Ingresa una expresión en x (ej:  x**2 + 2*x + 1 )\n"
-             "Opcionalmente indica un valor numérico para evaluar.",
+            "Opcionalmente indica un valor numérico para evaluar.",
         justify="center",
         text_color=("gray40", "gray70"),
         font=("Arial", 12)
@@ -84,18 +89,15 @@ def iniciar_interfaz():
             entry_funcion.focus_set()
             return
 
-        # Usar analizar_expresion en vez de analizar_funcion
         try:
             funcion, x = analizar_expresion(expr)
         except Exception as e:
             messagebox.showerror("Error al analizar", f"No se pudo analizar la expresión.\n\nDetalle: {e}")
             return
 
-        # Cálculos (dominio, recorrido e intersecciones)
         try:
-            from core.math_utils import analizar_dominio_recorrido, encontrar_intersecciones
-            dominio, recorrido = analizar_dominio_recorrido(funcion, x)
-            intersecciones_x, interseccion_y = encontrar_intersecciones(funcion, x)
+            dominio, recorrido, just_dom = analizar_dominio_recorrido(funcion, x)
+            intersecciones_x, interseccion_y, just_int = encontrar_intersecciones(funcion, x)
         except Exception as e:
             messagebox.showerror("Cálculo fallido", f"Ocurrió un error durante los cálculos.\n\nDetalle: {e}")
             return
@@ -103,18 +105,25 @@ def iniciar_interfaz():
         texto = f"• Dominio: {dominio}\n"
         texto += f"• Recorrido: {recorrido}\n"
         texto += f"• Intersecciones con X: {intersecciones_x}\n"
-        texto += f"• Intersección con Y: {interseccion_y}\n"
-        lbl_resultados.configure(text=texto)
+        texto += f"• Intersección con Y: {interseccion_y}\n\n"
+        texto += f"Justificación dominio/intersecciones:\n{just_dom}\n{just_int}\n"
 
+        # Paso a paso de la evaluación de f(x)
         x_val = None
         if x_val_str:
             try:
                 x_val = float(x_val_str)
-            except:
-                messagebox.showerror("Dato inválido", "x debe ser un número válido (ej: 2, 3.14, -1).")
+                paso_a_paso, resultado = evaluar_punto(funcion, x_val)
+                texto += "\nEvaluación paso a paso:\n"
+                texto += paso_a_paso
+                texto += f"\nResultado: f({x_val}) = {resultado}\n"
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al evaluar f(x): {e}")
                 return
 
-        # Usar plot_function en vez de graficar_funcion
+        lbl_resultados.configure(text=texto)
+
+        # Graficar
         try:
             import matplotlib.pyplot as plt
             fig, ax = plot_function(funcion, eval_point=x_val)
